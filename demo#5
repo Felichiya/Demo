@@ -1,0 +1,427 @@
+sql
+CREATE DATABASE restaurant_booking;
+
+USE restaurant_booking;
+
+CREATE TABLE users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
+    phone VARCHAR(20) NOT NULL,
+    email VARCHAR(100) NOT NULL,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE bookings (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    booking_date DATETIME NOT NULL,
+    guests INT NOT NULL CHECK (guests BETWEEN 1 AND 10),
+    status ENUM('Новое', 'Посещение состоялось', 'Отменено') DEFAULT 'Новое',
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+INSERT INTO users (first_name, last_name, phone, email, username, password) 
+VALUES ('Admin', 'Adminov', '80000000000', 'admin@example.com', 'admin', 'restaurant');
+
+index.html
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles.css">
+    <title>Я буду кушац</title>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1 class="logo">Я буду кушац</h1>
+            <nav>
+                <a href="register.php">Регистрация</a>
+                <a href="login.php">Авторизация</a>
+                <a href="reserve.php">Забронировать столик</a>
+                <a href="bookings.php">Мои бронирования</a>
+                <a href="admin.php">Панель администратора</a>
+            </nav>
+        </div>
+    </header>
+    <main>
+        <div class="container">
+            <section class="hero">
+                <h2>Добро пожаловать в ресторан "Я буду кушац"</h2>
+                <p>Мы предлагаем лучшие блюда и уютную атмосферу для вашего отдыха.</p>
+                <a href="reserve.php" class="btn">Забронировать столик</a>
+            </section>
+            <section class="about">
+                <h2>О нас</h2>
+                <img src="restaurant.jpg" alt="Ресторан" class="responsive">
+                <p>Наша команда профессионалов всегда готова сделать ваше времяпрепровождение незабываемым. Мы гордимся качеством наших блюд и вниманием к каждому клиенту.</p>
+            </section>
+            <section class="services">
+                <h2>Наши услуги</h2>
+                <div class="service-cards">
+                    <div class="service-card">
+                        <h3>Бронирование столиков</h3>
+                        <p>Легко и быстро забронируйте столик в нашем ресторане через онлайн-систему.</p>
+                    </div>
+                    <div class="service-card">
+                        <h3>Организация мероприятий</h3>
+                        <p>Мы поможем вам организовать незабываемые мероприятия, будь то свадьба или корпоратив.</p>
+                    </div>
+                    <div class="service-card">
+                        <h3>Кулинарные мастер-классы</h3>
+                        <p>Участвуйте в наших мастер-классах и научитесь готовить блюда от шеф-повара.</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 Я буду кушац. Все права защищены.</p>
+        </div>
+    </footer>
+</body>
+</html>
+
+register.php
+<?php
+include 'db.php';
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $first_name = $_POST['first_name'];
+    $last_name = $_POST['last_name'];
+    $phone = $_POST['phone'];
+    $email = $_POST['email'];
+    $username = $_POST['username'];
+    $password = $_POST['password'];
+
+    $stmt = $conn->prepare("INSERT INTO users (first_name, last_name, phone, email, username, password) VALUES (?, ?, ?, ?, ?, ?)");
+    $stmt->bind_param("ssssss", $first_name, $last_name, $phone, $email, $username, $password);
+    $stmt->execute();
+    $stmt->close();
+    echo "Регистрация успешна!";
+}
+?>
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles.css">
+    <title>Регистрация</title>
+</head>
+<body>
+    <h1>Регистрация</h1>
+    <form method="POST">
+        <input type="text" name="first_name" placeholder="Имя" required>
+        <input type="text" name="last_name" placeholder="Фамилия" required>
+        <input type="text" name="phone" placeholder="Телефон" required>
+        <input type="email" name="email" placeholder="Email" required>
+        <input type="text" name="username" placeholder="Логин" required>
+        <input type="password" name="password" placeholder="Пароль" required>
+        <button type="submit">Зарегистрироваться</button>
+    </form>
+    <p><a href="index.html" class="home-link">Перейти на главную</a></p>
+</body>
+</html>
+
+login.php
+<?php
+session_start();
+include 'db.php';
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $username = $_POST['username'];
+    $password = $_POST['password'];
+
+    $stmt = $conn->prepare("SELECT * FROM users WHERE username = ? AND password = ?");
+    $stmt->bind_param("ss", $username, $password);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result->num_rows > 0) {
+        $_SESSION['username'] = $username;
+        if ($username === 'admin' && $password === 'restaurant') {
+            header("Location: admin.php");
+            exit();
+        } else {
+            header("Location: bookings.php");
+            exit();
+        }
+    } else {
+        $error = "Неверный логин или пароль.";
+    }
+}
+?>
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="styles.css" />
+    <title>Авторизация</title>
+</head>
+<body>
+    <h1>Авторизация</h1>
+    <?php if (isset($error)) echo "<p style='color:red;'>$error</p>"; ?>
+    <form method="POST" autocomplete="off">
+        <input type="text" name="username" placeholder="Логин" required />
+        <input type="password" name="password" placeholder="Пароль" required />
+        <button type="submit">Войти</button>
+    </form>
+    <p><a href="index.html" class="home-link">Перейти на главную</a></p>
+</body>
+</html>
+
+bookings.php
+<?php
+session_start();
+include 'db.php';
+
+if (!isset($_SESSION['username'])) {
+    header("Location: login.php");
+    exit();
+}
+
+$username = $_SESSION['username'];
+$stmt = $conn->prepare("SELECT * FROM users WHERE username = ?");
+$stmt->bind_param("s", $username);
+$stmt->execute();
+$user = $stmt->get_result()->fetch_assoc();
+
+$stmt = $conn->prepare("SELECT * FROM bookings WHERE user_id = ?");
+$stmt->bind_param("i", $user['id']);
+$stmt->execute();
+$bookings = $stmt->get_result();
+?>
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles.css">
+    <title>Мои бронирования</title>
+</head>
+<body>
+    <h1>Мои бронирования</h1>
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Дата и время</th>
+            <th>Количество гостей</th>
+            <th>Статус</th>
+        </tr>
+        <?php while ($booking = $bookings->fetch_assoc()): ?>
+        <tr>
+            <td><?php echo $booking['id']; ?></td>
+            <td><?php echo $booking['booking_date']; ?></td>
+            <td><?php echo $booking['guests']; ?></td>
+            <td><?php echo $booking['status']; ?></td>
+        </tr>
+        <?php endwhile; ?>
+    </table>
+    <p><a href="index.html" class="home-link">Перейти на главную</a></p>
+</body>
+</html>
+
+reserve.php
+<?php
+session_start();
+include 'db.php';
+
+if (!isset($_SESSION['username'])) {
+    header("Location: login.php");
+    exit();
+}
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $username = $_SESSION['username'];
+    $stmt = $conn->prepare("SELECT * FROM users WHERE username = ?");
+    $stmt->bind_param("s", $username);
+    $stmt->execute();
+    $user = $stmt->get_result()->fetch_assoc();
+
+    $booking_date = $_POST['booking_date'];
+    $guests = $_POST['guests'];
+
+    $stmt = $conn->prepare("INSERT INTO bookings (user_id, booking_date, guests) VALUES (?, ?, ?)");
+    $stmt->bind_param("isi", $user['id'], $booking_date, $guests);
+    $stmt->execute();
+    echo "Бронирование успешно!";
+}
+?>
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles.css">
+    <title>Бронирование столика</title>
+</head>
+<body>
+    <h1>Бронирование столика</h1>
+    <form method="POST">
+        <input type="datetime-local" name="booking_date" required>
+        <input type="number" name="guests" min="1" max="10" required>
+        <button type="submit">Забронировать</button>
+    </form>
+    <p><a href="index.html" class="home-link">Перейти на главную</a></p>
+</body>
+</html>
+
+admin.php
+<?php
+session_start();
+include 'db.php';
+
+// Проверка, авторизован ли администратор
+if (!isset($_SESSION['username']) || $_SESSION['username'] !== 'admin') {
+    header("Location: login.php");
+    exit();
+}
+
+// Обработка изменения статуса бронирования
+if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['booking_id']) && isset($_POST['status'])) {
+    $booking_id = $_POST['booking_id'];
+    $status = $_POST['status'];
+
+    $stmt = $conn->prepare("UPDATE bookings SET status = ? WHERE id = ?");
+    $stmt->bind_param("si", $status, $booking_id);
+    $stmt->execute();
+    $stmt->close();
+}
+
+// Получение всех бронирований
+$stmt = $conn->prepare("SELECT * FROM bookings");
+$stmt->execute();
+$bookings = $stmt->get_result();
+?>
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles.css">
+    <title>Панель администратора</title>
+</head>
+<body>
+    <h1>Панель администратора</h1>
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Пользователь</th>
+            <th>Дата и время</th>
+            <th>Количество гостей</th>
+            <th>Статус</th>
+            <th>Действия</th>
+        </tr>
+        <?php while ($booking = $bookings->fetch_assoc()): ?>
+        <tr>
+            <td><?php echo $booking['id']; ?></td>
+            <td><?php echo $booking['user_id']; ?></td>
+            <td><?php echo $booking['booking_date']; ?></td>
+            <td><?php echo $booking['guests']; ?></td>
+            <td><?php echo $booking['status']; ?></td>
+            <td>
+                <form method="POST" style="display:inline;">
+                    <input type="hidden" name="booking_id" value="<?php echo $booking['id']; ?>">
+                    <select name="status">
+                        <option value="Новое" <?php if ($booking['status'] == 'Новое') echo 'selected'; ?>>Новое</option>
+                        <option value="Посещение состоялось" <?php if ($booking['status'] == 'Посещение состоялось') echo 'selected'; ?>>Посещение состоялось</option>
+                        <option value="Отменено" <?php if ($booking['status'] == 'Отменено') echo 'selected'; ?>>Отменено</option>
+                    </select>
+                    <button type="submit">Изменить статус</button>
+                </form>
+            </td>
+        </tr>
+        <?php endwhile; ?>
+    </table>
+    <p><a href="index.html" class="home-link">Перейти на главную</a></p>
+</body>
+</html>
+
+db.php
+<?php
+$servername = "localhost";
+$username = "root";
+$password = "";
+$dbname = "restaurant_booking";
+
+$conn = new mysqli($servername, $username, $password, $dbname);
+
+if ($conn->connect_error) {
+    die("Ошибка подключения: " . $conn->connect_error);
+}
+?>
+
+styles.css
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+.container {
+    width: 90%;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+header {
+    background-color: #333;
+    color: white;
+    padding: 20px 0;
+    text-align: center;
+}
+nav a {
+    color: white;
+    margin: 0 15px;
+    text-decoration: none;
+    font-weight: bold;
+}
+h1, h2 {
+    text-align: center;
+    margin: 20px 0;
+}
+.about, .services {
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px 0;
+    box-shadow: 0 1px 5px rgba(0,0,0,0.1);
+}
+.responsive {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+}
+.service-cards {
+    display: flex;
+    justify-content: space-between;
+}
+.service-card {
+    padding: 15px;
+}
+form {
+    max-width: 400px;
+    margin: auto;
+}
+input, button {
+    width: 100%;
+    padding: 10px;
+    margin: 8px 0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+footer {
+    background-color: #333;
+    color: white;
+    text-align: center;
+    padding: 15px 0;
+    margin-top: 40px;
+}
