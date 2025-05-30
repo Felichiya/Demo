@@ -85,7 +85,6 @@ index.html
     </footer>
 </body>
 </html>
-
 register.php
 <?php
 include 'db.php';
@@ -167,17 +166,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <title>Авторизация</title>
 </head>
 <body>
-    <h1>Авторизация</h1>
-    <?php if (isset($error)) echo "<p style='color:red;'>$error</p>"; ?>
-    <form method="POST" autocomplete="off">
-        <input type="text" name="username" placeholder="Логин" required />
-        <input type="password" name="password" placeholder="Пароль" required />
-        <button type="submit">Войти</button>
-    </form>
-    <p><a href="index.html" class="home-link">Перейти на главную</a></p>
+    <div class="container">
+        <h1>Авторизация</h1>
+        <?php if (isset($error)) echo "<p style='color:red;'>$error</p>"; ?>
+        <form method="POST" autocomplete="off">
+            <input type="text" name="username" placeholder="Логин" required />
+            <input type="password" name="password" placeholder="Пароль" required />
+            <button type="submit">Войти</button>
+        </form>
+        <p><a href="index.html" class="home-link">Перейти на главную</a></p>
+    </div>
 </body>
 </html>
-
 bookings.php
 <?php
 session_start();
@@ -367,50 +367,85 @@ body {
     font-family: Arial, sans-serif;
     margin: 0;
     padding: 0;
+    background-color: #f9f9f9;
 }
+
 .container {
     width: 90%;
     max-width: 1200px;
     margin: 0 auto;
 }
+
 header {
     background-color: #333;
     color: white;
     padding: 20px 0;
     text-align: center;
 }
+
 nav a {
     color: white;
     margin: 0 15px;
     text-decoration: none;
     font-weight: bold;
 }
+
 h1, h2 {
     text-align: center;
     margin: 20px 0;
 }
+
 .about, .services {
+    background-color: white;
     border-radius: 8px;
     padding: 20px;
     margin: 20px 0;
-    box-shadow: 0 1px 5px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
+.hero {
+background: #f7c383;
+color: white;
+padding: 40px 20px;
+border-radius: 8px;
+text-align: center;
+}
+
 .responsive {
     width: 100%;
     height: auto;
     border-radius: 8px;
 }
+
 .service-cards {
     display: flex;
     justify-content: space-between;
+    flex-wrap: wrap;
 }
+
 .service-card {
+    background-color: #f2f2f2;
+    border-radius: 8px;
     padding: 15px;
+    margin: 10px;
+    flex: 1 1 calc(30% - 20px);
+    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s;
 }
+
+.service-card h3 {
+    margin-top: 0;
+    color: #333;
+}
+
+.service-card p {
+    color: #666;
+}
+
 form {
     max-width: 400px;
     margin: auto;
 }
+
 input, button {
     width: 100%;
     padding: 10px;
@@ -418,10 +453,44 @@ input, button {
     border: 1px solid #ccc;
     border-radius: 4px;
 }
+
+button {
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
 footer {
     background-color: #333;
     color: white;
     text-align: center;
     padding: 15px 0;
     margin-top: 40px;
+}
+
+
+@media (max-width: 390px) {
+    .service-cards {
+        flex-direction: column;
+    }
+    .service-card {
+        flex: 1 1 100%;
+        margin: 10px 0;
+    }
+    form {
+        max-width: 90%;
+    }
+    .container {
+        width: 95%;
+    }
+    header {
+        padding: 15px 0;
+    }
+    nav a {
+        margin: 0 10px;
+    }
+    h1, h2 {
+        margin: 15px 0;
+    }
 }
